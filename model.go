@@ -1,7 +1,9 @@
 package main
 
 import (
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -75,10 +77,13 @@ func InitialModel() Model {
 	cursorPos[FieldOutputFolder] = 0
 	cursorPos[FieldExtraFlags] = 0
 
+	// Get default download folder
+	defaultFolder := getDefaultDownloadFolder()
+
 	return Model{
 		url:             "",
 		concurrent:      "4",
-		outputFolder:    ".",
+		outputFolder:    defaultFolder,
 		subtitles:       false,
 		playlist:        false,
 		extraFlags:      "",
@@ -298,4 +303,22 @@ func getClipboardContent() string {
 	}
 
 	return ""
+}
+
+// getDefaultDownloadFolder returns the default download folder path
+func getDefaultDownloadFolder() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "."
+	}
+
+	downloadFolder := filepath.Join(homeDir, "yt-dlp Downloads")
+
+	// Check if folder exists
+	if _, err := os.Stat(downloadFolder); err == nil {
+		return downloadFolder
+	}
+
+	// Fallback to current directory if folder doesn't exist
+	return "."
 }

@@ -2,8 +2,13 @@ package main
 
 import (
 	"bufio"
+	"crypto/rand"
+	"encoding/hex"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"time"
 	"unicode"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -37,6 +42,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case DownloadCompleteMsg:
 		success := msg.Success
 		m.downloadSuccess = &success
+		// Rename downloaded file if successful
+		if success {
+			return m, renameDownloadedFile(m.outputFolder)
+		}
 		return m, nil
 
 	case DownloadCompleteWithOutputMsg:
@@ -366,4 +375,81 @@ func waitForOutput() tea.Cmd {
 		}
 		return nil
 	}
+}
+
+// renameDownloadedFile renames the most recently downloaded file to a unique name
+func renameDownloadedFile(outputFolder string) tea.Cmd {
+	return func() tea.Msg {
+		// Get the actual folder path
+		folder := outputFolder
+		if folder == "" || folder == "." {
+			folder, _ = os.Getwd()
+		}
+
+		// Find the most recently created video file
+		files, err := os.ReadDir(folder)
+		if err != nil {
+			return nil
+		}
+
+		var newestFile os.DirEntry
+		var newestTime time.Time
+
+		videoExtensions := map[string]bool{
+			".mp4": true, ".mkv": true, ".webm": true, ".avi": true,
+			".mov": true, ".flv": true, ".wmv": true, ".m4v": true,
+		}
+
+		for _, file := range files {
+			if file.IsDir() {
+				continue
+			}
+
+			ext := strings.ToLower(filepath.Ext(file.Name()))
+			if !videoExtensions[ext] {
+				continue
+			}
+
+			info, err := file.Info()
+			if err != nil {
+				continue
+			}
+
+			if newestFile == nil || info.ModTime().After(newestTime) {
+				newestFile = file
+				newestTime = info.ModTime()
+			}
+		}
+
+		if newestFile == nil {
+			return nil
+		}
+
+		// Generate unique 20-character alphanumeric name
+		uniqueName := generateUniqueID(20)
+		ext := filepath.Ext(newestFile.Name())
+		newName := uniqueName + ext
+
+		oldPath := filepath.Join(folder, newestFile.Name())
+		newPath := filepath.Join(folder, newName)
+
+		// Rename the file
+		err = os.Rename(oldPath, newPath)
+		if err != nil {
+			return nil
+		}
+
+		return nil
+	}
+}
+
+// generateUniqueID generates a unique alphanumeric ID of specified length
+func generateUniqueID(length int) string {
+	bytes := make([]byte, (length+1)/2)
+	rand.Read(bytes)
+	id := hex.EncodeToString(bytes)
+	if len(id) > length {
+		id = id[:length]
+	}
+	return id
 }

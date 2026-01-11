@@ -1,20 +1,17 @@
 # yt-dlp TUI Downloader
 
-A terminal-based GUI (TUI) tool for downloading videos with yt-dlp, built with Go and Bubble Tea.
+A terminal-based GUI tool for downloading videos with yt-dlp, built with Go and Bubble Tea.
 
 ## Features
 
-- **Interactive TUI**: Clean, user-friendly terminal interface with box-drawing characters
+- **Interactive TUI**: Clean terminal interface with box-drawing characters
 - **Real-time Progress**: Live streaming output shows download progress as it happens
 - **Smart Defaults**: Pre-configured for best quality video + audio in MP4 format
-- **Customizable Options**:
-  - Concurrent fragment downloads (default: 4)
-  - Custom output folder
-  - Subtitle downloads (auto + manual)
-  - Playlist support
-  - Advanced flags support
+- **Auto-rename**: Downloaded files are automatically renamed to unique 20-character alphanumeric IDs
+- **Default Downloads Folder**: Creates and uses `~/yt-dlp Downloads` by default
+- **Customizable Options**: Concurrent downloads, output folder, subtitles, playlists, advanced flags
 - **Input Validation**: Checks URL presence and folder writability before download
-- **Clipboard Support**: Ctrl+V to paste URLs and paths
+- **Clipboard Support**: Ctrl+V to paste URLs and paths (Linux: xclip/xsel/wl-paste)
 - **Keyboard Navigation**: Full keyboard control with intuitive shortcuts
 
 ## Prerequisites
@@ -22,32 +19,21 @@ A terminal-based GUI (TUI) tool for downloading videos with yt-dlp, built with G
 - **Go 1.21+** (for building)
 - **yt-dlp** (must be installed and in PATH)
 
-Install yt-dlp:
 ```bash
-# Using pip
+# Install yt-dlp
 pip install yt-dlp
-
-# Or using your package manager
-# macOS: brew install yt-dlp
-# Linux: apt install yt-dlp / pacman -S yt-dlp
+# Or: brew install yt-dlp (macOS) / apt install yt-dlp (Linux)
 ```
 
 ## Installation
 
 ```bash
-# Clone the repository
 cd /path/to/HlsDownloader
-
-# Build and install
 go install .
-
-# Or just build
-go build
+# Or: go build
 ```
 
 ## Usage
-
-Simply run the executable:
 
 ```bash
 hlsdownloader
@@ -60,96 +46,63 @@ hlsdownloader
 | Tab / ↓ | Navigate to next field |
 | Shift+Tab / ↑ | Navigate to previous field |
 | Enter | Toggle checkbox or start download |
-| Space | Toggle checkbox or insert space in text field |
+| Space | Toggle checkbox or insert space |
 | Left / Right | Move cursor within text field |
 | Home / End | Jump to start/end of field |
 | Backspace / Delete | Remove character |
 | Ctrl+V | Paste from clipboard |
 | q / Ctrl+C | Quit application |
 
-## Configuration Options
+## Configuration
 
 ### URL (Required)
-The video URL to download. Supports YouTube and hundreds of other sites via yt-dlp.
+Video URL to download (supports YouTube and 1000+ sites via yt-dlp)
 
 ### Concurrent Fragments
-Number of parallel connections for downloading (default: 4). Higher values can speed up downloads but may be throttled by some servers.
+Number of parallel connections (default: 4). Higher values may speed up downloads.
 
 ### Output Folder
-Directory where videos will be saved (default: current directory). The tool validates that the folder exists and is writable.
+Download destination (default: `~/yt-dlp Downloads`). Must exist and be writable.
 
 ### Subtitles
-When enabled, downloads available subtitles (both auto-generated and manual) using `--write-subs --write-auto-subs`.
+Downloads available subtitles (auto-generated + manual) via `--write-subs --write-auto-subs`
 
 ### Playlist Mode
-- **Unchecked** (default): Downloads only the single video, even if URL is a playlist
-- **Checked**: Downloads entire playlist if URL contains one
+- Unchecked: Single video only
+- Checked: Downloads entire playlist
 
 ### Extra Flags
-Advanced yt-dlp flags for power users. Examples:
-- `--format-sort res:1080` - Prefer 1080p
-- `--cookies cookies.txt` - Use cookies file
-- `--proxy socks5://127.0.0.1:1080` - Use proxy
+Advanced yt-dlp options (e.g., `--format-sort res:1080`, `--cookies cookies.txt`)
 
 ## Default Command
-
-The tool builds commands based on this template:
 
 ```bash
 yt-dlp -f "bv*+ba/b" --merge-output-format mp4 --newline [OPTIONS] [URL]
 ```
 
-- `-f "bv*+ba/b"`: Best video + best audio, fallback to best combined
-- `--merge-output-format mp4`: Output as MP4
-- `--newline`: Force line-by-line output for real-time progress display
-
-## Download Progress
-
-During download, you'll see:
-- Animated spinner (⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏)
-- Full command being executed
-- Live streaming output from yt-dlp showing:
-  - Download percentage
-  - File size
-  - Download speed
-  - ETA
-- Success (✓) or failure (✗) status on completion
+- Best video + best audio, merged to MP4
+- Newline-separated output for real-time progress display
+- Files auto-renamed to 20-char unique IDs after download
 
 ## Project Structure
 
 ```
-HlsDownloader/
-├── main.go         # Entry point, yt-dlp availability check
-├── model.go        # Data structures and state management
-├── view.go         # UI rendering logic
-├── update.go       # Event handling and streaming output
+├── main.go         # Entry point, setup default folder
+├── model.go        # Data structures and state
+├── view.go         # UI rendering
+├── update.go       # Event handling and file rename
 ├── validation.go   # Input validation
-├── executor.go     # Command building and execution
-├── go.mod          # Go module definition
-└── README.md       # This file
+├── executor.go     # Command building
+└── README.md
 ```
 
 ## Technical Details
 
-- **Framework**: [Bubble Tea](https://github.com/charmbracelet/bubbletea) for TUI
-- **Language**: Go
-- **Architecture**: Modular design with separation of concerns
-- **Streaming**: Real-time output using channel-based message passing
-- **Clipboard**: Supports xclip, xsel, and wl-paste (Linux)
-
-## Error Handling
-
-The application handles:
-- Missing yt-dlp binary (exit on startup)
-- Empty URL validation
-- Non-existent output folder
-- Non-writable output folder
-- Command execution failures with exit codes
+- **Framework**: Bubble Tea (TUI framework)
+- **Streaming**: Channel-based real-time output with carriage return handling
+- **File Naming**: Cryptographic random 20-char alphanumeric IDs
+- **Default Folder**: `~/yt-dlp Downloads` (auto-created on startup)
 
 ## License
 
-This project is provided as-is for personal and educational use.
-
-## Contributing
-
-This is a personal project. Feel free to fork and modify for your own needs.
+Provided as-is for personal and educational use.
